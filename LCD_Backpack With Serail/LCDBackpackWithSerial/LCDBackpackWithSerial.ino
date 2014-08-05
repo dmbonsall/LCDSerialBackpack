@@ -1,20 +1,15 @@
-#define LCD_RS  A2
-#define LCD_RW  A1
-#define LCD_EN  A0
-
 #define ERROR_PIN  A3
 
 #define NUM_COMMANDS  4
 
-#define ASCII_OFFSET  0
-
+#include "pinDefs.h"
 #include <LiquidCrystal.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
 
 //instantiate the lcd for 8 bit mode
-LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_EN, 2, 3, 4, 5, 6, 7, 8, 9);
+LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_EN, D0, D1, D2, D3, D4, D5, D6, D7);
 
 typedef void(*LCDCommand)(void);
 LCDCommand commands[NUM_COMMANDS] = {&LCDHome, &LCDClear, &LCDSetCursor, &LCDPrint};
@@ -24,8 +19,8 @@ void setup()
   Serial.begin(9600);
   
   //init the LCD
-  lcd.begin(20,4);
-  lcd.print("Hello, World!");
+  lcd.begin(COL, ROW);
+  lcd.print("Hello, World! Take me to your leader!");
   
   //init the error pin
   pinMode(ERROR_PIN, OUTPUT);
@@ -37,7 +32,7 @@ void loop()
 {
   while(!Serial.available());  //wait for data to come in
   
-  uint8_t data = Serial.read() - ASCII_OFFSET;
+  uint8_t data = Serial.read();
   
   if (data >= NUM_COMMANDS)  //make sure the command index is a valid index
     errorBreak();
@@ -59,10 +54,10 @@ void LCDClear()
 void LCDSetCursor()
 {
   while(!Serial.available());
-  uint8_t col = Serial.read() - ASCII_OFFSET;
+  uint8_t col = Serial.read();
   
   while(!Serial.available());  //wait till next byte
-  uint8_t row = Serial.read() - ASCII_OFFSET;
+  uint8_t row = Serial.read();
   lcd.setCursor(col, row);
 }
 
@@ -73,7 +68,7 @@ void LCDPrint()
     while(!Serial.available());  //wait
     char data = Serial.read();
     
-    if (data == 'NUL')  //if we have recieved the null character, then stop the print sequence
+    if (data == 0)  //if we have recieved the null character, then stop the print sequence
       break;
     lcd.print(data);
   }
